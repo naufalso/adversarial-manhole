@@ -1,0 +1,7 @@
+numpy
+pillow
+datasets
+torch
+torchvision
+super-gradients
+wandb
