@@ -15,7 +15,8 @@ class SuperGradientsModel(ModelSS):
     def __init__(self, model_name, device=None, **kwargs):
         super(SuperGradientsModel, self).__init__(model_name, device=device, **kwargs)
 
-    def get_supported_models(self) -> List[str]:
+    @staticmethod
+    def get_supported_models() -> List[str]:
         """
         Get the list of supported models.
 
@@ -95,6 +96,8 @@ class SuperGradientsModel(ModelSS):
         )
 
         input_image = input_image.to(self.device)
+
+        return input_image
 
     def predict(self, tensor_images, original_shape, **kwargs):
         """
@@ -192,10 +195,10 @@ class SuperGradientsModel(ModelSS):
             Figure: The plot figure.
         """
         # Get the predicted class labels
-        pred_labels = torch.argmax(prediction, dim=1)
+        pred_labels = torch.argmax(prediction, dim=0)
 
         # Convert the predicted labels to a numpy array
-        pred_labels_np = pred_labels.squeeze().detach().cpu().numpy()
+        pred_labels_np = pred_labels.detach().cpu().numpy()
 
         # Resize the predicted labels to the original image size
         pred_labels_np = np.array(

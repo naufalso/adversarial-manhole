@@ -5,16 +5,17 @@ import matplotlib.pyplot as plt
 
 from torchvision.transforms import ToTensor, Resize, InterpolationMode
 from adv_manhole.models.monodepth2.networks import ResnetEncoder, DepthDecoder
-from adv_manhole.models.model_mde import MDEModel
+from adv_manhole.models.model_mde import ModelMDE
 from typing import Tuple, List, Callable
 
 
-class MonoDepth2(MDEModel):
-    def __init__(self, device=None, **kwargs):
-        super(MonoDepth2, self).__init__(device=device, **kwargs)
+class MonoDepth2(ModelMDE):
+    def __init__(self, model_name, device=None, **kwargs):
+        super(MonoDepth2, self).__init__(model_name, device=device, **kwargs)
         # Add your model layers and configurations here
 
-    def get_supported_models(self) -> List[str]:
+    @staticmethod
+    def get_supported_models() -> List[str]:
         """
         Get the list of supported models for monocular depth estimation.
 
@@ -44,15 +45,15 @@ class MonoDepth2(MDEModel):
         """
         if model_path is None:
             current_dir = os.path.dirname(os.path.abspath(__file__))
-            base_model_path = os.path.join(current_dir, "monodepth2", "weights")
+            model_path = os.path.join(current_dir, "weights")
 
         if model_name == "mono_640x192":
             # Initialize the model
             self.encoder = ResnetEncoder(18, False)
             self.depth_decoder = DepthDecoder(self.encoder.num_ch_enc)
 
-            encoder_path = os.path.join(base_model_path, model_name, "encoder.pth")
-            depth_decoder_path = os.path.join(base_model_path, model_name, "depth.pth")
+            encoder_path = os.path.join(model_path, model_name, "encoder.pth")
+            depth_decoder_path = os.path.join(model_path, model_name, "depth.pth")
 
             # Load the encoder weights
             loaded_dict_enc = torch.load(encoder_path, map_location="cpu")

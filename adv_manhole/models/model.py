@@ -1,4 +1,6 @@
 import torch
+import numpy as np
+from PIL import Image
 
 from abc import ABC, abstractmethod
 from typing import Tuple, List, Callable
@@ -16,11 +18,36 @@ class Model(ABC):
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         self.model, self.input_height, self.input_width = self.load(
-            model_name, self.device
+            model_name, device=self.device
         )
 
-    @abstractmethod
-    def get_supported_models(self) -> List[str]:
+    def get_input_shape(self, input_image):
+        """
+        Get the original shape of the input image.
+
+        Args:
+            input_image (numpy.ndarray, torch.Tensor, or PIL.Image): The input image.
+
+        Returns:
+            tuple: The original shape of the input image.
+        """
+
+        # Get the original shape of the input image (H, W)
+        if torch.is_tensor(input_image):
+            input_shape = input_image.shape[-2:]
+        elif isinstance(input_image, Image.Image):
+            input_shape = input_image.size[::-1]
+        elif isinstance(input_image, np.ndarray):
+            # Check if the input has a batch dimension
+            if len(input_image.shape) == 3:
+                input_shape = input_image.shape[:2]
+            else:
+                input_shape = input_image.shape[-3:-1]
+
+        return input_shape
+
+    @staticmethod
+    def get_supported_models() -> List[str]:
         """
         Get the list of supported models.
 
@@ -68,12 +95,13 @@ class Model(ABC):
         pass
 
     @abstractmethod
-    def predict(self, tensor_images, **kwargs):
+    def predict(self, tensor_images, original_shape, **kwargs):
         """
         Predicts the output for the given tensor images.
 
         Args:
             tensor_images (Tensor): The input tensor images.
+            original_shape (tuple): The original shape of the input images.
 
         Returns:
             Tensor: The predicted output tensor.
@@ -83,10 +111,33 @@ class Model(ABC):
 
         Examples:
             >>> model = Model()
-            >>> input_images = torch.randn(1, 3, 224, 224)
-            >>> output = model.predict(input_images)
+            >>> tensor_images = torch.rand(1, 3, 224, 224)
+            >>> original_shape = (224, 224)
+            >>> output = model.predict(tensor_images, original_shape)
         """
         pass
+
+    def __call__(self, input_image, **kwargs):
+        """
+        Perform the prediction on the input image.
+
+        Args:
+            input_image (numpy.ndarray or tensor): The input image.
+
+        Returns:
+            Tensor: The predicted output tensor.
+        """
+
+        # Get the shape of the input image
+        input_shape = self.get_input_shape(input_image)
+
+        # Preprocess the input image
+        tensor_images = self.preprocess(input_image)
+
+        # Perform the prediction
+        prediction = self.predict(tensor_images, input_shape)
+
+        return prediction
 
     @abstractmethod
     def plot(self, image, prediction, **kwargs):
