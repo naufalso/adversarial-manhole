@@ -106,3 +106,13 @@ def depth_to_local_coordinates(
     )
 
     return centerized_local_3d_coordinate_ue4
+
+
+def process_surface_coordinates(raw_depth, camera_config):
+    # Process the depth image
+    processed_depth_img = process_depth(raw_depth)
+
+    # Convert the depth image to local coordinates
+    surface_xyz = depth_to_local_coordinates(processed_depth_img, camera_config)
+
+    return surface_xyz
