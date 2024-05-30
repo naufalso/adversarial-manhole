@@ -2,6 +2,8 @@
 *.pth
 *.zip
 *.npy
+*.png
+*.jpg
 
 notebooks/data/
 

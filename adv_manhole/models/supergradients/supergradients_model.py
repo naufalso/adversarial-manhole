@@ -214,12 +214,12 @@ class SuperGradientsModel(ModelSS):
         fig = plt.figure(figsize=(5, 5))
         plt.subplot(211)
         plt.imshow(image)
-        plt.title("Input", fontsize=22)
+        plt.title("Input")
         plt.axis("off")
 
         plt.subplot(212)
         plt.imshow(pred_labels_colored)
-        plt.title("Segmented Image", fontsize=22)
+        plt.title("Segmented Image")
         plt.axis("off")
         plt.tight_layout()
 
