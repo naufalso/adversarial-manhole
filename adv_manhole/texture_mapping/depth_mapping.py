@@ -19,6 +19,8 @@ class DepthTextureMapping:
         else:
             self.circle_mask = None
 
+        self.tex_offset[1] -= (self.tex_scale * 0.5)  # Shift the offset to center the texture
+
     def _get_texture_scale(self, batch_size: int):
         tex_scales = (
             torch.rand(batch_size) * (self.random_scale[1] - self.random_scale[0])
@@ -38,7 +40,6 @@ class DepthTextureMapping:
             torch.rand(batch_size) * (self.random_shift_y[1] - self.random_shift_y[0])
             + self.random_shift_y[0]
             + self.tex_offset[1]
-            - (self.tex_scale * 0.5)  # Shift the offset to center the texture
         )  
 
         xyz_offsets = torch.stack([x_offset, y_offset, torch.zeros(batch_size)], dim=1)
