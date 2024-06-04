@@ -132,15 +132,15 @@ class DepthTextureMapping:
 
         return rendered_img_z
     
-    def __call__(self, texture, surface_xyz, background, batch_size, random_scale=True, random_shift=True):
+    def __call__(self, texture, surface_xyz, background, batch_size, tex_scales=None, xyz_offsets=None, random_scale=True, random_shift=True):
         if random_scale:  
             tex_scales = self._get_texture_scale(batch_size)
-        else:
+        elif tex_scales is None:
             tex_scales = torch.tensor([self.tex_scale] * batch_size).to(self.device)
 
         if random_shift:
             xyz_offsets = self._get_texture_offset(batch_size)
-        else:
+        elif xyz_offsets is None:
             xyz_offsets = torch.tensor([self.tex_offset + [0.0]] * batch_size).to(self.device)
 
         if self.circle_mask is not None:

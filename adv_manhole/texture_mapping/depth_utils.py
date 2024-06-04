@@ -1,5 +1,6 @@
 import math
 import numpy as np
+import torch
 
 
 def process_depth(depth_img_raw: np.ndarray) -> np.ndarray:
@@ -116,3 +117,46 @@ def process_surface_coordinates(raw_depth, camera_config):
     surface_xyz = depth_to_local_coordinates(processed_depth_img, camera_config)
 
     return surface_xyz
+
+def disp_to_depth(disparity, min_depth=0.1, max_depth=100.0):
+    """
+    Converts the disparity map to depth map.
+
+    Args:
+        disparity (torch.Tensor): The disparity map.
+        min_depth (float): The minimum depth value.
+        max_depth (float): The maximum depth value.
+
+    Returns:
+        torch.Tensor: The depth map.
+    """
+    min_disp = 1 / max_depth
+    max_disp = 1 / min_depth
+
+    scaled_disp = min_disp + (max_disp - min_disp) * disparity
+    depth = 1 / scaled_disp
+
+    return depth
+    
+
+def median_scaling(prediction_depth, gt_depth, reference_masks = None):
+    """
+    Scales the predicted depth map to match the ground truth median depth.
+
+    Args:
+        prediction_depth (torch.Tensor): The predicted depth map.
+        gt_depth (torch.Tensor): The ground truth depth map.
+        reference_masks (torch.Tensor): The reference masks.
+
+    Returns:
+        Tuple[torch.Tensor, torch.Tensor]: The scaled depth map and the scaling ratio.
+    """
+
+    if reference_masks is None:
+        reference_masks = torch.ones_like(prediction_depth)
+
+    gt_depth[gt_depth == 0] = 1e-3
+    ratio = torch.median(gt_depth[reference_masks > 0.5]) / torch.median(prediction_depth[reference_masks > 0.5])
+    scaled_depth = prediction_depth * ratio
+
+    return scaled_depth, ratio

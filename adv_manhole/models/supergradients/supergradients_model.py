@@ -182,6 +182,38 @@ class SuperGradientsModel(ModelSS):
         ]
         return np.array(color_maps, dtype=np.uint8)
 
+    def visualize_prediction(self, prediction, **kwargs):
+        """
+        Visualizes the predicted labels by applying a color palette to the predicted labels.
+
+        Args:
+            prediction (torch.Tensor): The predicted labels.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            numpy.ndarray: The predicted labels with colors applied.
+
+        """
+        # Get the predicted class labels
+        pred_labels = torch.argmax(prediction, dim=0)
+
+        # Convert the predicted labels to a numpy array
+        pred_labels_np = pred_labels.detach().cpu().numpy()
+
+        # Resize the predicted labels to the original image size
+        pred_labels_np = np.array(
+            Image.fromarray(pred_labels_np.astype(np.uint8))
+        )  # .resize(size=cityscape_img.size, resample=Image.NEAREST))
+
+        # Create a color pallette, selecting a color for each class
+        color_palette = self._cityscapes_color_map()
+
+        # Apply the color pallette to the predicted labels
+        pred_labels_colored = color_palette[pred_labels_np]
+
+        return pred_labels_colored
+
+
     def plot(self, image, prediction, **kwargs):
         """
         Plots the prediction.

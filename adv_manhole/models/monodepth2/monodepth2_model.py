@@ -2,6 +2,8 @@ import os
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib as mpl
+import matplotlib.cm as cm
 
 from torchvision.transforms import ToTensor, Resize, InterpolationMode
 from adv_manhole.models.monodepth2.networks import ResnetEncoder, DepthDecoder
@@ -139,6 +141,28 @@ class MonoDepth2(ModelMDE):
         )
 
         return disp_resized
+
+    def visualize_prediction(self, prediction, **kwargs):
+        """
+        Visualizes the disparity prediction.
+
+        Args:
+            prediction (torch.Tensor): The disparity prediction.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            numpy.ndarray: The visualized disparity prediction.
+
+        """
+        disp_resized_np = prediction.squeeze().cpu().detach().numpy()
+        vmax = np.percentile(disp_resized_np, 95)
+
+        normalizer = mpl.colors.Normalize(vmin=disp_resized_np.min(), vmax=vmax)
+        mapper = cm.ScalarMappable(norm=normalizer, cmap='magma')
+        colormapped_im = (mapper.to_rgba(disp_resized_np)[:, :, :3] * 255).astype(np.uint8)
+        
+        return colormapped_im
+
 
     def plot(self, image, prediction, **kwargs):
         """
