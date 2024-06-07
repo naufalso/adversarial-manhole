@@ -22,6 +22,7 @@ class Model(ABC):
                 model_name, device=self.device
             )
         else:
+            #print(instrinsic_json_path)
             self.encoder, self.depth_decoder, self.input_height, self.input_width, self.min_depth_bin, self.max_depth_bin, self.K, self.invK = self.load(
             model_name, device=self.device, instrinsic_json_path=instrinsic_json_path
         )
