@@ -13,12 +13,18 @@ class Model(ABC):
     input_height = None
     input_width = None
 
-    def __init__(self, model_name, device=None, **kwargs):
+    def __init__(self, model_name, device=None, instrinsic_json_path:str='', **kwargs):
         if device is None:
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        self.model, self.input_height, self.input_width = self.load(
-            model_name, device=self.device
+        if instrinsic_json_path == '':
+            self.model, self.input_height, self.input_width = self.load(
+                model_name, device=self.device
+            )
+        else:
+            #print(instrinsic_json_path)
+            self.encoder, self.depth_decoder, self.input_height, self.input_width, self.min_depth_bin, self.max_depth_bin, self.K, self.invK = self.load(
+            model_name, device=self.device, instrinsic_json_path=instrinsic_json_path
         )
 
     def get_input_shape(self, input_image):
@@ -96,6 +102,29 @@ class Model(ABC):
 
     @abstractmethod
     def predict(self, tensor_images, original_shape, **kwargs):
+        """
+        Predicts the output for the given tensor images.
+
+        Args:
+            tensor_images (Tensor): The input tensor images.
+            original_shape (tuple): The original shape of the input images.
+
+        Returns:
+            Tensor: The predicted output tensor.
+
+        Raises:
+            ValueError: If the input tensor images are invalid.
+
+        Examples:
+            >>> model = Model()
+            >>> tensor_images = torch.rand(1, 3, 224, 224)
+            >>> original_shape = (224, 224)
+            >>> output = model.predict(tensor_images, original_shape)
+        """
+        pass
+
+    @abstractmethod
+    def predict(self, tensor_images, source_image, original_shape, **kwargs):
         """
         Predicts the output for the given tensor images.
 
