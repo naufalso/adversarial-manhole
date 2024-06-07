@@ -1,10 +1,11 @@
 from adv_manhole.models.monodepth2.monodepth2_model import MonoDepth2
 from adv_manhole.models.supergradients.supergradients_model import SuperGradientsModel
+from adv_manhole.models.depth_hints.depth_hints_model import DepthHints
 from typing import Optional
 from enum import Enum
 
 # Create ENUM for model types
-ModelType = Enum("ModelType", ["MDE", "SS"])
+ModelType = Enum("ModelType", ["MDE", "SS", "DH", "MD"])
 
 
 def load_models(
@@ -31,6 +32,12 @@ def load_models(
     elif model_type == ModelType.SS:
         if model_name in SuperGradientsModel.get_supported_models():
             return SuperGradientsModel(model_name, device=device, **kwargs)
+    elif model_type == ModelType.DH:
+        if model_name in DepthHintsModel.get_supported_models():
+            return DepthHintsModel(model_name, device=device, **kwargs)
+    elif model_type == ModelType.MD:
+        if model_name in ManyDepthModel.get_supported_models():
+            return ManyDepthModel(model_name, device=device, **kwargs)
     else:
         raise ValueError(
             f"Unsupported model type: {model_type}. Supported types are 'mde' and 'ss'."
