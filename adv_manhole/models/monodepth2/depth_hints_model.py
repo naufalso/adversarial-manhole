@@ -47,8 +47,11 @@ class DepthHints(ModelMDE):
             self.encoder = ResnetEncoder(50, False)
             self.depth_decoder = DepthDecoder(num_ch_enc=self.encoder.num_ch_enc, scales=range(4))
 
-            encoder_path = os.path.join("../models/depth_hints/weights", model_name, "encoder.pth")
-            depth_decoder_path = os.path.join("../models/depth_hints/weights", model_name, "depth.pth")
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            model_path = os.path.join(current_dir, "weights")
+            
+            encoder_path = os.path.join(model_path, model_name, "encoder.pth")
+            depth_decoder_path = os.path.join(model_path, model_name, "depth.pth")
             
             # Load the encoder weights
             loaded_dict_enc = torch.load(encoder_path, map_location='cpu')

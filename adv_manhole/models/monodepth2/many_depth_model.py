@@ -63,10 +63,13 @@ class ManyDepth(ModelMDE):
             model_path = os.path.join(current_dir, "weights")
 
         if model_name == "kitti_640x192":
-            encoder_path = os.path.join("../models/many_depth/weights", model_name, "encoder.pth")
-            depth_decoder_path = os.path.join("../models/many_depth/weights", model_name, "depth.pth")
-            pose_encoder_path = os.path.join("../models/many_depth/weights", model_name, "pose_encoder.pth")
-            pose_decoder_path = os.path.join("../models/many_depth/weights", model_name, "pose.pth")
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            model_path = os.path.join(current_dir, "weights")
+            
+            encoder_path = os.path.join(model_path, model_name, "encoder.pth")
+            depth_decoder_path = os.path.join(model_path, model_name, "depth.pth")
+            pose_encoder_path = os.path.join(model_path, model_name, "pose_encoder.pth")
+            pose_decoder_path = os.path.join(model_path, model_name, "pose.pth")
             
             # Load Encoder
             encoder_dict = torch.load(encoder_path, map_location='cpu')
