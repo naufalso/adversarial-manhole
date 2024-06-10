@@ -13,18 +13,12 @@ class Model(ABC):
     input_height = None
     input_width = None
 
-    def __init__(self, model_name, device=None, instrinsic_json_path:str='', **kwargs):
+    def __init__(self, model_name, device=None, **kwargs):
         if device is None:
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        if instrinsic_json_path == '':
-            self.model, self.input_height, self.input_width = self.load(
-                model_name, device=self.device
-            )
-        else:
-            #print(instrinsic_json_path)
-            self.encoder, self.depth_decoder, self.input_height, self.input_width, self.min_depth_bin, self.max_depth_bin, self.K, self.invK = self.load(
-            model_name, device=self.device, instrinsic_json_path=instrinsic_json_path
+        self.model, self.input_height, self.input_width = self.load(
+            model_name, device=self.device, **kwargs
         )
 
     def get_input_shape(self, input_image):
@@ -124,7 +118,7 @@ class Model(ABC):
         pass
 
     @abstractmethod
-    def predict(self, tensor_images, source_image, original_shape, **kwargs):
+    def predict(self, tensor_images, original_shape, **kwargs):
         """
         Predicts the output for the given tensor images.
 

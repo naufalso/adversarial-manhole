@@ -7,19 +7,19 @@ import matplotlib as mpl
 import matplotlib.cm as cm
 
 from torchvision.transforms import ToTensor, Resize, InterpolationMode
-from adv_manhole.models.model_md import ModelMD
+from adv_manhole.models.model_mde import ModelMDE
 from adv_manhole.models.many_depth.networks import ResnetEncoderMatching, DepthDecoder, PoseDecoder, ResnetEncoder
 from adv_manhole.models.many_depth.networks.layers import transformation_from_parameters
 
 from typing import Tuple, List, Callable
 
-class ManyDepth(ModelMD):
+class ManyDepth(ModelMDE):
     def __init__(self, model_name, device=None, **kwargs):
         super(ManyDepth, self).__init__(model_name, device=device, **kwargs)
 
     @staticmethod
     def get_supported_models() -> List[str]:
-        return ["mono_640x192", "kitti_640x192"]
+        return ["kitti_640x192"]
 
     def _load_and_preprocess_intrinsics(self, intrinsics_path, resize_width, resize_height):
         K = np.eye(4)
@@ -62,10 +62,15 @@ class ManyDepth(ModelMD):
             model_path = os.path.join(current_dir, "weights")
 
         if model_name == "mono_640x192" or model_name == "kitti_640x192":
-            encoder_path = os.path.join("../models/many_depth/weights", model_name, "encoder.pth")
-            depth_decoder_path = os.path.join("../models/many_depth/weights", model_name, "depth.pth")
-            pose_encoder_path = os.path.join("../models/many_depth/weights", model_name, "pose_encoder.pth")
-            pose_decoder_path = os.path.join("../models/many_depth/weights", model_name, "pose.pth")
+            encoder_path = os.path.join(model_path, model_name, "encoder.pth")
+            depth_decoder_path = os.path.join(model_path, model_name, "depth.pth")
+            pose_encoder_path = os.path.join(model_path, model_name, "pose_encoder.pth")
+            pose_decoder_path = os.path.join(model_path, model_name, "pose.pth")
+
+            print("instrinsic_json_path", instrinsic_json_path)
+
+            if instrinsic_json_path is None or instrinsic_json_path == '':
+                instrinsic_json_path = os.path.join(current_dir, "intrinsics", "test_sequence_intrinsics.json")
             
             # Load Encoder
             encoder_dict = torch.load(encoder_path, map_location='cpu')
@@ -115,11 +120,40 @@ class ManyDepth(ModelMD):
                 resize_height=input_width
             )
 
-            #model = lambda tensor_images: self.depth_decoder(
-                #self.encoder(tensor_images)[0]
-            #)
+            self.min_depth_bin, self.max_depth_bin, self.K, self.invK = encoder_dict['min_depth_bin'], encoder_dict['max_depth_bin'], K, invK
 
-            return self.encoder, self.depth_decoder, input_height, input_width, encoder_dict['min_depth_bin'], encoder_dict['max_depth_bin'], K, invK
+            def model(tensor_image):
+                source_image = tensor_image.clone()
+                # Get Pose First
+                pose_inputs = [tensor_image, source_image]
+                pose_inputs = [self.pose_enc(torch.cat(pose_inputs, 1))]
+                axisangle, translation = self.pose_dec(pose_inputs)
+                pose = transformation_from_parameters(axisangle[:, 0], translation[:, 0], invert=True)
+
+                # Mono
+                pose *= 0
+                source_image *= 0
+
+                output, lowest_cost, _ = self.encoder(
+                    current_image=tensor_image,
+                    lookup_images=source_image.unsqueeze(1),
+                    poses=pose.unsqueeze(1),
+                    K=K,
+                    invK=invK,
+                    min_depth_bin=self.min_depth_bin,
+                    max_depth_bin=self.max_depth_bin
+                )
+
+                disparity = self.depth_decoder(output)[("disp", 0)]
+
+                return disparity
+
+            model_call = lambda input_images: torch.cat(
+                [model(input_image) for input_image in input_images.split(1)]
+            )
+
+            return model_call, input_height, input_width
+
         else:
             raise ValueError(f"Model {model_name} is not supported yet.")
 
@@ -150,7 +184,7 @@ class ManyDepth(ModelMD):
 
         return input_image
 
-    def predict(self, tensor_image, source_image, original_shape, return_raw=False, **kwargs):
+    def predict(self, tensor_image, original_shape, return_raw=False, **kwargs):
         """
         Predicts the output of the model for the given input tensor_images.
 
@@ -163,32 +197,9 @@ class ManyDepth(ModelMD):
             torch.Tensor: Output tensor of the model predictions.
         """
         if return_raw:
-            features = self.encoder(tensor_images)
-            outputs = self.depth_decoder(features)
+            raise NotImplementedError("Return raw not implemented for ManyDepth model")
 
-            return features, outputs
-
-        # Get Pose First
-        pose_inputs = [source_image, tensor_image]
-        pose_inputs = [self.pose_enc(torch.cat(pose_inputs, 1))]
-        axisangle, translation = self.pose_dec(pose_inputs)
-        pose = transformation_from_parameters(axisangle[:, 0], translation[:, 0], invert=True)
-
-        # Mono
-        pose *= 0  # zero poses are a signal to the encoder not to construct a cost volume
-        source_image *= 0
-
-        output, lowest_cost, _ = self.encoder(
-            current_image=tensor_image,
-            lookup_images=source_image.unsqueeze(1),
-            poses=pose.unsqueeze(1),
-            K=self.K,
-            invK=self.invK,
-            min_depth_bin=self.min_depth_bin,
-            max_depth_bin=self.max_depth_bin
-        )
-
-        disparity = self.depth_decoder(output)[("disp", 0)]
+        disparity = self.model(tensor_image)
         disp_resized = torch.nn.functional.interpolate(
             disparity, original_shape, mode="bilinear", align_corners=False
         )

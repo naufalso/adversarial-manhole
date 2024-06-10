@@ -6,18 +6,18 @@ import matplotlib as mpl
 import matplotlib.cm as cm
 
 from torchvision.transforms import ToTensor, Resize, InterpolationMode
-from adv_manhole.models.model_dh import ModelDH
+from adv_manhole.models.model_mde import ModelMDE
 from adv_manhole.models.depth_hints.networks import ResnetEncoder, DepthDecoder
 
 from typing import Tuple, List, Callable
 
-class DepthHints(ModelDH):
+class DepthHints(ModelMDE):
     def __init__(self, model_name, device=None, **kwargs):
         super(DepthHints, self).__init__(model_name, device=device, **kwargs)
 
     @staticmethod
     def get_supported_models() -> List[str]:
-        return ["mono_640x192"]
+        return ["dh_resnet50_640x192"]
 
     def load(
         self, model_name, model_path:str=None, device=None, **kwargs
@@ -42,13 +42,13 @@ class DepthHints(ModelDH):
             current_dir = os.path.dirname(os.path.abspath(__file__))
             model_path = os.path.join(current_dir, "weights")
 
-        if model_name == "mono_640x192":
+        if model_name == "dh_resnet50_640x192":
             # Model Initialize
-            self.encoder = ResnetEncoder(18, False)
+            self.encoder = ResnetEncoder(50, False)
             self.depth_decoder = DepthDecoder(num_ch_enc=self.encoder.num_ch_enc, scales=range(4))
 
-            encoder_path = os.path.join("../models/depth_hints/weights", model_name, "encoder.pth")
-            depth_decoder_path = os.path.join("../models/depth_hints/weights", model_name, "depth.pth")
+            encoder_path = os.path.join(model_path, model_name, "encoder.pth")
+            depth_decoder_path = os.path.join(model_path, model_name, "depth.pth")
             
             # Load the encoder weights
             loaded_dict_enc = torch.load(encoder_path, map_location='cpu')
