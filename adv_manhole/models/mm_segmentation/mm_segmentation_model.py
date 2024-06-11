@@ -6,23 +6,31 @@ import matplotlib as mpl
 import matplotlib.cm as cm
 
 from torchvision.transforms import ToTensor, Resize, InterpolationMode
-from adv_manhole.models.model_mm import ModelMM
+from adv_manhole.models.model_ss import ModelSS
 
 from typing import Tuple, List, Callable
 from mmseg.visualization import SegLocalVisualizer
 from mmseg.apis import init_model, inference_model
 
-class MMSegmentation(ModelMM):
+class MMSegmentation(ModelSS):
     def __init__(self, model_name, device=None, **kwargs):
         super(MMSegmentation, self).__init__(model_name, device=device, **kwargs)
 
     @staticmethod
     def get_supported_models() -> List[str]:
-        return ["pspnet_r50-d8_4xb2-80k_cityscapes-512x1024"]
+        return [
+            "pspnet_r50-d8_4xb2-80k_cityscapes-512x1024", 
+            'ddrnet_23_in1k-pre_2xb6-120k_cityscapes-1024x1024',
+            'bisenetv2_fcn_4xb4-160k_cityscapes-1024x1024',
+            'icnet_r18-d8_4xb2-160k_cityscapes-832x832'
+        ]
 
     def _get_model_map(self) -> dict:
         model_files_map_dict = {
-            "pspnet_r50-d8_4xb2-80k_cityscapes-512x1024" : "pspnet_r50-d8_512x1024_80k_cityscapes_20200606_112131-2376f12b.pth"
+            "pspnet_r50-d8_4xb2-80k_cityscapes-512x1024" : "pspnet_r50-d8_512x1024_80k_cityscapes_20200606_112131-2376f12b.pth",
+            "ddrnet_23_in1k-pre_2xb6-120k_cityscapes-1024x1024" : "ddrnet_23_in1k-pre_2xb6-120k_cityscapes-1024x1024_20230425_162633-81601db0.pth",
+            "bisenetv2_fcn_4xb4-160k_cityscapes-1024x1024" : "bisenetv2_fcn_4x4_1024x1024_160k_cityscapes_20210902_015551-bcf10f09.pth",
+            "icnet_r18-d8_4xb2-160k_cityscapes-832x832": "icnet_r18-d8_832x832_160k_cityscapes_20210925_230153-2c6eb6e0.pth"
         }
 
         return model_files_map_dict
@@ -49,7 +57,9 @@ class MMSegmentation(ModelMM):
         if model_path is None:
             current_dir = os.path.dirname(os.path.abspath(__file__))
             model_path = os.path.join(current_dir, "weights")
-        if model_name == "pspnet_r50-d8_4xb2-80k_cityscapes-512x1024":
+
+        if model_name in self._get_model_map().keys():
+        #if model_name == "pspnet_r50-d8_4xb2-80k_cityscapes-512x1024":
             # Get Filename for model weight
             weight_filename = self._get_model_map()[model_name]
             

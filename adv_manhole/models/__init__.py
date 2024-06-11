@@ -7,7 +7,7 @@ from typing import Optional
 from enum import Enum
 
 # Create ENUM for model types
-ModelType = Enum("ModelType", ["MDE", "SS", "MM"])
+ModelType = Enum("ModelType", ["MDE", "SS"])
 
 
 def load_models(
@@ -40,7 +40,6 @@ def load_models(
     elif model_type == ModelType.SS:
         if model_name in SuperGradientsModel.get_supported_models():
             return SuperGradientsModel(model_name, device=device, **kwargs)
-    elif model_type == ModelType.MM:
         if model_name in MMSegmentation.get_supported_models():
             return MMSegmentation(model_name, device=device, **kwargs)
     else:
