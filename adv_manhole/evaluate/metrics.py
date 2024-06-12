@@ -101,7 +101,7 @@ def asr_segmentation_region(predicted_semantic, original_semantic, original_inde
     # Calculate the texture area
     texture_area = texture_masks.squeeze(1).sum(dim=(1, 2))
 
-    # Calculate the rea from untargeted ASR in road area
+    # Calculate the area from untargeted ASR in road area
     untargeted_asr_road = (untargeted_asr * road_masks * original_road_masks)
     untargeted_area = untargeted_asr_road.squeeze(1).sum(dim=(1, 2))
 
