@@ -214,7 +214,7 @@ class SuperGradientsModel(ModelSS):
         return pred_labels_colored
 
 
-    def plot(self, image, prediction, **kwargs):
+    def plot(self, image, prediction, save:bool=False, save_path:str='log/', **kwargs):
         """
         Plots the prediction.
 
@@ -254,5 +254,8 @@ class SuperGradientsModel(ModelSS):
         plt.title("Segmented Image")
         plt.axis("off")
         plt.tight_layout()
+        
+        if save:
+            plt.savefig(save_path)
 
         return fig

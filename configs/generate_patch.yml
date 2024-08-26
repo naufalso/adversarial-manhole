@@ -1,0 +1,40 @@
+device:
+    gpu: 3
+    
+dataset:
+    name: naufalso/carla_hd
+    cache_dir: manhole_data
+    batch_size: 8
+    
+manhole_set:
+    manhole_candidate_path: manhole_data
+    image_size: 224
+
+model:
+    mde_model: "mono_640x192"
+    ss_model: ddrnet_23
+    
+patches:
+    texture:
+        texture_resolution: 256
+        texture_augmentation:
+            brightness: 0.2
+            contrast: 0.1
+        output_augmentation:
+            brightness: 0.2
+            contrast: 0.1
+    loss_init_weight:
+        mde_loss_weight: 2.0
+        ss_ua_loss_weight: 0.5
+        ss_ta_loss_weight: 0.5
+        tv_loss_weight: 1.0
+        content_loss_weight: 0.5
+        background_loss_weight: 0.0
+        
+parameter:
+    epochs: 25
+    learning_rate: 0.01
+
+log:
+    log_name: test
+    log_prediction: 5
