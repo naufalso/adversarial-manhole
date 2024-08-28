@@ -2,6 +2,7 @@ import os
 import torch
 import json
 import random
+import pandas as pd
 import numpy as np
 import cv2
 
@@ -16,19 +17,22 @@ from adv_manhole.attack.losses import AdvManholeLosses
 from adv_manhole.texture_mapping.depth_mapping import DepthTextureMapping
 from adv_manhole.attack.losses import AdvManholeLosses
 
+from adv_manhole.evaluate.metrics import error_distance_region, asr_segmentation_region
+from adv_manhole.texture_mapping.depth_utils import disp_to_depth, median_scaling
+
 class AdvManholeFramework:
 
     def __init__(
         self,
-        optimizer,
         mde_model: ModelMDE,
         ss_model: ModelSS,
-        loss: AdvManholeLosses,
-        patch_texture_var,
         depth_planar_mapping:DepthTextureMapping,
-        texture_augmentation,
-        output_augmentation,
-        device
+        optimizer=None,
+        loss: AdvManholeLosses=None,
+        patch_texture_var=None,
+        texture_augmentation=None,
+        output_augmentation=None,
+        device=None
     ):
         self.optimizer = optimizer
         self.mde_model = mde_model
@@ -40,6 +44,9 @@ class AdvManholeFramework:
         self.output_augmentation = output_augmentation
         self.device = device
         
+        self.original_index = 0 # Road
+        self.target_indices = [3, 4, 5, 6, 7, 11, 12, 13, 14, 15, 16, 17, 18]
+        
     def forward(
         self,
         batch, 
@@ -47,9 +54,6 @@ class AdvManholeFramework:
         depth_planar_mapping: DepthTextureMapping, 
         adversarial_losses: AdvManholeLosses, 
     ):
-        original_index = 0 # Road
-        target_indices = [3, 4, 5, 6, 7, 11, 12, 13, 14, 15, 16, 17, 18]
-        
         rgb = batch["rgb"].to(self.device)
         local_surface_coors = batch["local_surface_coors"].to(self.device)
 
@@ -92,8 +96,8 @@ class AdvManholeFramework:
             predicted_disp,
             torch.ones_like(predicted_disp),
             predicted_semantic,
-            original_index,
-            target_indices
+            self.original_index,
+            self.target_indices
         )
 
         return {
@@ -104,6 +108,108 @@ class AdvManholeFramework:
             "predicted_disp": predicted_disp,
             "predicted_semantic": predicted_semantic,
         }
+    
+    def forward_eval(
+        self,
+        batch,
+        patch_texture = None,
+        tex_scales = None,
+        xyz_offsets = None
+    ):
+        rgb = batch["rgb"].to(self.device)
+        local_surface_coors = batch["local_surface_coors"].to(self.device)
+
+        current_batch_size = rgb.shape[0]
+
+        if patch_texture is not None:
+            # Repeat the texture to match the batch size
+            batched_texture = patch_texture.repeat(
+                current_batch_size, 1, 1, 1
+            )
+
+            final_images, texture_masks = self.depth_planar_mapping(
+                batched_texture, local_surface_coors, rgb, current_batch_size, tex_scales=tex_scales, xyz_offsets=xyz_offsets, random_scale=False, random_shift=False
+            )
+
+            # Predict the depth and semantic segmentation
+            predicted_disp = self.mde_model(final_images)
+            predicted_semantic = self.ss_model(final_images)
+
+            return predicted_disp, predicted_semantic, texture_masks
+        else:
+            predicted_disp = self.mde_model(rgb)
+            predicted_semantic = self.ss_model(rgb)
+        
+            return predicted_disp, predicted_semantic, None
+    
+    def evaluate(
+        self,
+        dataset,
+        total_batch:list,
+        manhole_set,
+        log_name:str
+    ):
+        eval_metrics = {
+            'train': defaultdict(list),
+            'validation': defaultdict(list),
+            'test': defaultdict(list)
+        }
+
+        for datatype, total in zip(['train', 'validation', 'test'], total_batch):
+            with tqdm(
+                dataset[datatype], total=total, desc=f"{datatype} Evaluation"
+            ) as pbar:
+                for batch in pbar:
+                    metrics = {}
+
+                    road_masks = batch["road_mask"].cuda()
+                    gt_depth = batch["depth"].to('cuda')
+
+                    with torch.no_grad():
+                        current_batch_size = batch["rgb"].shape[0]
+                        tex_scales = self.depth_planar_mapping._get_texture_scale(current_batch_size)
+                        xyz_offsets = self.depth_planar_mapping._get_texture_offset(current_batch_size)
+
+                        ori_predicted_disp, ori_predicted_semantic, _ = self.forward_eval(batch, tex_scales=tex_scales, xyz_offsets=xyz_offsets)
+                        ori_predicted_depth = disp_to_depth(ori_predicted_disp)
+                        ori_scaled_predicted_depth, ratio = median_scaling(ori_predicted_depth, gt_depth)
+
+                        for manhole_name, manhole_image in manhole_set.items():
+                            # print(key)
+                            predicted_disp, predicted_semantic, texture_masks = self.forward_eval(batch, manhole_image, tex_scales=tex_scales, xyz_offsets=xyz_offsets)
+
+                            scaled_predicted_depth = disp_to_depth(predicted_disp) * ratio
+
+                            # Calculate the error distance
+                            mde_metrics = error_distance_region(scaled_predicted_depth, ori_scaled_predicted_depth, texture_masks, road_masks, distance_threshold=0.25)
+
+                            for mde_key in mde_metrics.keys():
+                                eval_metrics[datatype][f"{manhole_name}/{mde_key}"].append(mde_metrics[mde_key].item())
+
+                            # Calculate the ASR
+                            ss_metrics = asr_segmentation_region(predicted_semantic, ori_predicted_semantic, self.original_index, self.target_indices, texture_masks, road_masks)
+                            for ss_key in ss_metrics.keys():
+                                eval_metrics[datatype][f"{manhole_name}/{ss_key}"].append(ss_metrics[ss_key].item())
+
+                        metrics.update({
+                            key: np.mean(eval_metrics[datatype][key])
+                            for key in eval_metrics[datatype].keys()
+                        })
+
+                    pbar.set_postfix(metrics)
+                    
+        # Save evaluation result
+        # Check if direectory is exist or not, if ot make dirs
+        dir_path = os.path.join('log', log_name)
+        if os.path.exists(dir_path) is False:
+            os.makedirs(dir_path)
+        
+        for key in eval_metrics.keys():
+            json_str = pd.DataFrame(eval_metrics[key]).mean().to_json()
+            final_json = json.loads(json_str)
+            
+            with open(os.path.join(dir_path, "eval_{}.json".format(key)), 'w') as f:
+                json.dump(final_json, f, indent=4)
         
     def train(
         self,

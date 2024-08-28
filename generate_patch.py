@@ -37,7 +37,9 @@ def main():
     dataset, filtered_dataset = load_hf_dataset(
         dataset_name=cfg['dataset']['name'],
         batch_size=batch_size,
-        cache_dir=cfg['dataset']['cache_dir']
+        cache_dir=cfg['dataset']['cache_dir'],
+        filter_set='train',
+        selected_columns=["rgb", "raw_depth", "camera_config"]
     )
 
     # Load manhole candidate
@@ -72,21 +74,16 @@ def main():
         random_scale=(0.0, 0.01),
         with_circle_mask=True,
         device=device
-    )    
+    )
     
     # Define patch texture
     texture_res = cfg['patches']['texture']['texture_resolution']
     adversarial_texture = torch.rand((3, texture_res, texture_res)).cuda()
     patch_texture_var = torch.nn.Parameter(adversarial_texture, requires_grad=True)
-    
-    # Get batch total
-    filtered_columns_dataset = filtered_dataset.select_columns(
-        ["rgb", "raw_depth", "camera_config"]
-    )
 
-    train_total_batch = len(filtered_columns_dataset["train"]) // batch_size + 1 if len(filtered_columns_dataset["train"]) % batch_size != 0 else 0
-    val_total_batch = len(filtered_columns_dataset["validation"]) // batch_size + 1 if len(filtered_columns_dataset["validation"]) % batch_size != 0 else 0
-    test_total_batch = len(filtered_columns_dataset["test"]) // batch_size + 1 if len(filtered_columns_dataset["test"]) % batch_size != 0 else 0
+    train_total_batch = len(filtered_dataset["train"]) // batch_size + 1 if len(filtered_dataset["train"]) % batch_size != 0 else 0
+    val_total_batch = len(filtered_dataset["validation"]) // batch_size + 1 if len(filtered_dataset["validation"]) % batch_size != 0 else 0
+    test_total_batch = len(filtered_dataset["test"]) // batch_size + 1 if len(filtered_dataset["test"]) % batch_size != 0 else 0
     
     # Define augmentation
     brightness = cfg['patches']['texture']['texture_augmentation']['brightness']

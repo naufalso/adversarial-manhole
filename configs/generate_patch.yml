@@ -8,10 +8,18 @@ dataset:
     
 manhole_set:
     manhole_candidate_path: manhole_data
-    image_size: 224
-
+    image_size: 256
+    adversarial_sample_images:
+        normal: adversarial_example/naive_manhole.jpg
+        artistic: adversarial_example/artistic_manhole.jpg
+        full: adversarial_example/full_manhole.png
+        mde: adversarial_example/mde_manhole.png
+        ss: adversarial_example/ss_manhole.png
+        ss_ta: adversarial_example/ss_ta_manhole.png
+        additional: log/test/texture_epoch_24.png
+    
 model:
-    mde_model: "mono_640x192"
+    mde_model: mono_640x192
     ss_model: ddrnet_23
     
 patches:
@@ -38,3 +46,6 @@ parameter:
 log:
     log_name: test
     log_prediction: 5
+    
+evaluation:
+    patch_path: log/
