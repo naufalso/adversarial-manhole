@@ -164,7 +164,7 @@ class MonoDepth2(ModelMDE):
         return colormapped_im
 
 
-    def plot(self, image, prediction, **kwargs):
+    def plot(self, image, prediction, save:bool=False, save_path:str='log/', **kwargs):
         """
         Plots the input image and the disparity prediction.
 
@@ -192,8 +192,10 @@ class MonoDepth2(ModelMDE):
         plt.title("Disparity")
         plt.axis("off")
 
+        if save:
+            plt.savefig(save_path)
+        
         return fig
-
 
 if __name__ == "__main__":
     # Test check the current path
