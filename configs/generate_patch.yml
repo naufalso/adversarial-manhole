@@ -16,7 +16,7 @@ manhole_set:
         mde: adversarial_example/mde_manhole.png
         ss: adversarial_example/ss_manhole.png
         ss_ta: adversarial_example/ss_ta_manhole.png
-        additional: log/test/texture_epoch_24.png
+        additional: adversarial_example/texture_epoch_24.png
     
 model:
     mde_model: mono_640x192
