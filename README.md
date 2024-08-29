@@ -13,7 +13,21 @@ This is a PyTorch implementation of the [Adversarial Manhole paper](https://www.
 }
 ```
 
-# Installation
+# Setup & Installation
 ```
-pip install requirements.txt
+pip install -r requirements.txt
+```
+Get Monodepth2 Model :
+Place the model into : `adv_manhole/models/monodepth2/weights/{model_name}`
+```
+https://github.com/nianticlabs/monodepth2
+```
+
+# Training
+```
+python generate_patch.py --config_path path_to_config_file.yml
+```
+# Evaluation
+```
+python evaluate_patch.py --config_path path_to_config_file.yml
 ```
