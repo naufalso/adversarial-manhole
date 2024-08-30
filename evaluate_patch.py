@@ -1,3 +1,4 @@
+import os
 import torch
 import argparse
 
@@ -18,8 +19,14 @@ def main():
     cfg = load_yaml(args.config_path)
     
     # Set cuda device
-    device = torch.device("cuda")
-    torch.cuda.set_device(cfg["device"]["gpu"])
+    if cfg["device"]["gpu"] == 'cpu':
+        device = torch.device("cpu")
+    else:
+        device = torch.device("cuda")
+        torch.cuda.set_device(cfg["device"]["gpu"])
+    
+    if os.path.exists(cfg["log"]["log_main_dir"]) is False:
+        os.makedirs(cfg["log"]["log_main_dir"])
     
     # Load dataset
     batch_size=cfg['dataset']['batch_size']
@@ -52,7 +59,7 @@ def main():
         device=device
     )
     
-    train_total_batch = len(filtered_dataset["train"]) // batch_size + 1 if len(filtered_dataset["train"]) % batch_size != 0 else 0
+    train_total_batch = len(filtered_dataset["train"]) // batch_size + 1 if len1(filtered_dataset["train"]) % batch_size != 0 else 0
     val_total_batch = len(filtered_dataset["validation"]) // batch_size + 1 if len(filtered_dataset["validation"]) % batch_size != 0 else 0
     test_total_batch = len(filtered_dataset["test"]) // batch_size + 1 if len(filtered_dataset["test"]) % batch_size != 0 else 0
     

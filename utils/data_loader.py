@@ -109,7 +109,7 @@ def load_manhole_set(
         candidate_images = []
         
         for idx, filename in enumerate(os.listdir(manhole_set_path)):
-            print(filename)
+            #print(filename)
             candidate_img = image_loader(f"{manhole_set_path}/{filename}", loader)
             candidate_images.append(candidate_img)
                 

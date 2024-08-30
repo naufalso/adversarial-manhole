@@ -31,21 +31,19 @@ patches:
         output_augmentation:
             brightness: 0.2
             contrast: 0.1
-    loss_init_weight:
-        mde_loss_weight: 2.0
-        ss_ua_loss_weight: 0.5
-        ss_ta_loss_weight: 0.5
-        tv_loss_weight: 1.0
-        content_loss_weight: 0.5
-        background_loss_weight: 0.0
+        loss_init_weight:
+            mde_loss_weight: 2.0
+            ss_ua_loss_weight: 0.5
+            ss_ta_loss_weight: 0.5
+            tv_loss_weight: 1.0
+            content_loss_weight: 0.5
+            background_loss_weight: 0.0
         
 parameter:
     epochs: 25
     learning_rate: 0.01
 
 log:
+    log_main_dir: log
     log_name: test
     log_prediction: 5
-    
-evaluation:
-    patch_path: log/

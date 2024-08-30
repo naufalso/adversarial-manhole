@@ -29,8 +29,15 @@ def main():
     cfg = load_yaml(args.config_path)
     
     # Set cuda device
-    device = torch.device("cuda")
-    torch.cuda.set_device(cfg["device"]["gpu"])
+    if cfg["device"]["gpu"] == 'cpu':
+        device = torch.device("cpu")
+    else:
+        device = torch.device("cuda")
+        torch.cuda.set_device(cfg["device"]["gpu"])
+    
+    # Create Log Directory if not exist
+    if os.path.exists(cfg["log"]["log_main_dir"]) is False:
+        os.makedirs(cfg["log"]["log_main_dir"])
     
     # Load dataset
     batch_size=cfg['dataset']['batch_size']
