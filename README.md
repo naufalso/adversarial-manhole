@@ -27,7 +27,7 @@ pip install -r requirements.txt
 Config file can be placed inside `./configs` directory. Config files handles dataset, device, training parameter and etc.
 
 Below is how to setup the config files
-1. Device & dataset
+1. **Device & dataset**
 ```
 device:
       gpu: gpu_num
@@ -39,7 +39,7 @@ dataset:
 ```
 For now, our supported data loading uses Huggingface dataset. For, CPU usage we can alter the gpu_num into cpu.
 
-2. Manhole Sample
+2. **Manhole Sample**
 ```
 manhole_set:
       manhole_candidate_path: directory_to/sample_manhole/
@@ -52,7 +52,7 @@ manhole_set:
 ```
 `manhole_candidate_path` and `image_size` are mandatory, while `adversarial_sample_images` at least have 1 image to be filled and can be added as many as possible for evaluation purpose.
 
-3. Model, Patches, and Training Parameter
+3. **Model, Patches, and Training Parameter**
 ```
 model:
       mde_model: mono_640x192
@@ -81,7 +81,7 @@ parameter:
 ```
 Define Mono Depth Estimation and Semantic Segmentation model that will be attacked. Specify Patches parameter and patches optimization parameter, above also an example of default parameter used in the paper.
 
-4. Log
+4. **Log**
 ```
 log:
       log_main_dir: log
@@ -111,3 +111,5 @@ After specify the desired patch image, we can run the evaluation :
 ```
 python evaluate_patch.py --config_path path_to_config_file.yml
 ```
+
+# License
