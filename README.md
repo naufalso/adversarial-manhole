@@ -91,9 +91,12 @@ log:
 Set log details such as log interval and directory to save training/evaluation log.
 
 # 💨Training
+After Setup the environment and the config file, we can optimize the adversarial manhole using below command by specifying config file :
 ```
 python generate_patch.py --config_path path_to_config_file.yml
 ```
+The training loss and update of every optimized image will be saved in specified log directory.
+
 # 📈Evaluation
 For evaluation setup, specify the desired image inside Config file.
 Example how to insert specific generated adversarial manhole texture patch for evaluation : 
