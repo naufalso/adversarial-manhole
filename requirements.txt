@@ -1,0 +1,11 @@
+numpy
+pillow
+datasets
+torch
+torchvision
+super-gradients
+wandb
+openmim
+mmengine
+mmcv==2.1.0
+mmsegmentation
